@@ -18,4 +18,4 @@ class Database:
     def cerrar(self):
         self.driver.close()
 
-db = database()
+db = Database()
