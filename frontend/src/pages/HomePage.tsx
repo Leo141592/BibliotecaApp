@@ -1,8 +1,24 @@
 import BookCard from "../components/BookCard"
-
+import { useEffect, useState } from "react"
+import { obtenerRecomendaciones } from "../services/api"
 import MainLayout from "../layouts/MainLayout"
 
 function HomePage() {
+
+  const [recomendaciones, setRecomendaciones] = useState<any[]>([])
+
+  useEffect(() => {
+
+  obtenerRecomendaciones("1")
+    .then((data) => {
+      console.log(data)
+      setRecomendaciones(data)
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+
+}, [])
     
 
 const books = [
