@@ -1,10 +1,12 @@
 from fastapi import FastAPI
-
-from app.rutas import rutasRecomendacion
+from app.rutas.rutasRecomendacion import router
 
 app = FastAPI()
 
-app.include_router(
-    rutasRecomendacion.router,
-    prefix="/recomendacion"
-)
+@app.get("/")
+def root():
+    return {
+        "mensaje": "API funcionando"
+    }
+
+app.include_router(router)
