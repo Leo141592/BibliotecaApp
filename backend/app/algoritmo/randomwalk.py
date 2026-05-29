@@ -1,12 +1,16 @@
-import random
 from collections import defaultdict
+import random
 
 from app.configuracion.database import db
 
 
 class Randomwalk:
 
-    def __init__(self, probabilidad_reinicio=0.3, pasos=500):
+    def __init__(
+        self,
+        probabilidad_reinicio=0.3,
+        pasos=500
+    ):
 
         self.probabilidad_reinicio = probabilidad_reinicio
         self.pasos = pasos
@@ -16,21 +20,26 @@ class Randomwalk:
         visitas = defaultdict(int)
 
         current_node = {
-            "label": "User",
-            "id_usuario": id_usuario
+            "label": "Usuario",
+            "id": int(id_usuario)
         }
 
         libros_leidos = self.obtener_libros_leidos(id_usuario)
 
-        with db.driver.session() as session:
+        with db.driver.session(
+            database="biblioteca"
+        ) as session:
 
             for _ in range(self.pasos):
 
-                if random.random() < self.probabilidad_reinicio:
+                if (
+                    random.random()
+                    < self.probabilidad_reinicio
+                ):
 
                     current_node = {
-                        "label": "User",
-                        "id_usuario": id_usuario
+                        "label": "Usuario",
+                        "id": int(id_usuario)
                     }
 
                 query = """
@@ -38,38 +47,38 @@ class Randomwalk:
 
                 WHERE
                     (
-                        n:User
-                        AND n.id_usuario = $id_nodo
+                        n:Usuario
+                        AND n.id = $id_nodo
                     )
 
                     OR
 
                     (
-                        n:Book
-                        AND n.id_libro = $id_nodo
+                        n:Libro
+                        AND n.titulo = $id_nodo
                     )
 
                     OR
 
                     (
-                        n:Genre
-                        AND n.id_genero = $id_nodo
+                        n:Genero
+                        AND n.nombre = $id_nodo
                     )
 
                 RETURN
                     labels(m)[0] AS label,
 
-                    m.id_usuario AS id_usuario,
-                    m.id_libro AS id_libro,
-                    m.id_genero AS id_genero,
+                    m.id AS id_usuario,
+                    m.titulo AS titulo,
+                    m.nombre AS genero,
 
-                    r.peso AS peso
+                    r.puntuacion AS peso
                 """
 
                 id_nodo = (
-                    current_node.get("id_usuario")
-                    or current_node.get("id_libro")
-                    or current_node.get("id_genero")
+                    current_node.get("id")
+                    or current_node.get("titulo")
+                    or current_node.get("genero")
                 )
 
                 resultado = session.run(
@@ -84,43 +93,48 @@ class Randomwalk:
                     label = r["label"]
                     peso = r["peso"] or 1
 
-                    if label == "User":
+                    if label == "Usuario":
                         peso += 2
 
-                    for _ in range(peso):
+                    for _ in range(int(peso)):
 
-                        if label == "User":
+                        if label == "Usuario":
 
                             vecinos.append({
                                 "label": label,
-                                "id_usuario": r["id_usuario"]
+                                "id": r["id_usuario"]
                             })
 
-                        elif label == "Book":
+                        elif label == "Libro":
 
                             vecinos.append({
                                 "label": label,
-                                "id_libro": r["id_libro"]
+                                "titulo": r["titulo"]
                             })
 
-                        elif label == "Genre":
+                        elif label == "Genero":
 
                             vecinos.append({
                                 "label": label,
-                                "id_genero": r["id_genero"]
+                                "genero": r["genero"]
                             })
 
                 if not vecinos:
                     continue
 
-                current_node = random.choice(vecinos)
+                current_node = random.choice(
+                    vecinos
+                )
 
-                if current_node["label"] == "Book":
+                if (
+                    current_node["label"]
+                    == "Libro"
+                ):
 
-                    id_libro = current_node["id_libro"]
+                    titulo = current_node["titulo"]
 
-                    if id_libro not in libros_leidos:
-                        visitas[id_libro] += 1
+                    if titulo not in libros_leidos:
+                        visitas[titulo] += 1
 
         recomendaciones = sorted(
             visitas.items(),
@@ -130,29 +144,34 @@ class Randomwalk:
 
         return recomendaciones[:10]
 
-    def obtener_libros_leidos(self, id_usuario):
+    def obtener_libros_leidos(
+        self,
+        id_usuario
+    ):
 
         query = """
-        MATCH (u:User {
-            id_usuario: $id_usuario
-        })-[:LEYO]->(b:Book)
+        MATCH (u:Usuario {
+            id: $id_usuario
+        })-[:LEYO]->(b:Libro)
 
-        RETURN b.id_libro AS id_libro
+        RETURN b.titulo AS titulo
         """
 
         libros = []
 
-        with db.driver.session() as session:
+        with db.driver.session(
+            database="biblioteca"
+        ) as session:
 
             resultado = session.run(
                 query,
-                id_usuario=id_usuario
+                id_usuario=int(id_usuario)
             )
 
             for r in resultado:
 
                 libros.append(
-                    r["id_libro"]
+                    r["titulo"]
                 )
 
         return libros
