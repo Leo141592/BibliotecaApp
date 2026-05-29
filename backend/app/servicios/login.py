@@ -1,23 +1,23 @@
-from app.utilidades.seguridad import (verificar_contrasenia, crear_token)
 from app.configuracion.database import db
+
 
 class Login:
 
     @staticmethod
-    def iniciar_sesion(
-		correo,
-		contrasenia
-    ):
+    def iniciar_sesion(id_usuario: int):
+        """
+        Login temporal por id directo.
+        No requiere correo ni contraseña.
+        """
 
         query = """
-        MATCH (u:User {correo: $correo})
+        MATCH (u:Usuario {id: $id_usuario})
         RETURN u
         """
 
-        with db.driver.session() as session:
+        with db.driver.session(database="biblioteca") as session:
 
-            resultado = session.run(query, correo=correo)
-
+            resultado = session.run(query, id_usuario=id_usuario)
             busqueda = resultado.single()
 
             if not busqueda:
@@ -25,17 +25,8 @@ class Login:
 
             usuario = busqueda["u"]
 
-            if not verificar_contrasenia(contrasenia, usuario["contrasenia"]):
-                return None
-
-            token = crear_token({
-				"id_usuario": usuario["id_usuario"],
-                "correo": usuario["correo"]
-            })
-
             return {
-				"token": token,
-				"id_usuario": usuario["id_usuario"],
-				"nombre_usuario": usuario["nombre_usuario"]
-				
-			}
+                "token": "temp",
+                "id_usuario": str(usuario["id"]),
+                "nombre_usuario": usuario["nombre"]
+            }

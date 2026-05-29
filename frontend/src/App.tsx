@@ -9,44 +9,17 @@ import BookDetailsPage from "./pages/BookDetailsPage"
 import SearchFriendsPage from "./pages/SearchFriendsPage"
 
 function App() {
-
   return (
-
     <Routes>
-
-      <Route path="/" element={<LoginPage />} />
-
-      <Route path="/account" element={<AccountPage />} />
-
-      <Route
-        path="/register"
-        element={<RegisterPage />}
-      />
-
-      <Route
-        path="/home"
-        element={<HomePage />}
-      />
-
-      <Route
-        path="/books/:id"
-        element={<BookDetailsPage />}
-      />
-
-      <Route path="/explore" element={<ExplorePage />} />
-
-      <Route
-  path="/friends"
-  element={<FriendsPage />}
-/>
-
-<Route
-  path="/search-friends"
-  element={<SearchFriendsPage />}
-/>
-
+      <Route path="/"               element={<LoginPage />} />
+      <Route path="/register"       element={<RegisterPage />} />
+      <Route path="/home"           element={<HomePage />} />
+      <Route path="/books/:id"      element={<BookDetailsPage />} />
+      <Route path="/explore"        element={<ExplorePage />} />
+      <Route path="/friends"        element={<FriendsPage />} />
+      <Route path="/search-friends" element={<SearchFriendsPage />} />
+      <Route path="/account"        element={<AccountPage />} />
     </Routes>
-
   )
 }
 

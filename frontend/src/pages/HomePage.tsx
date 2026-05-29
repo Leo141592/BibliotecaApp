@@ -1,129 +1,84 @@
-import BookCard from "../components/BookCard"
 import { useEffect, useState } from "react"
-import { obtenerRecomendaciones } from "../services/api"
+import { useNavigate } from "react-router-dom"
 import MainLayout from "../layouts/MainLayout"
+import { obtenerRecomendaciones, obtenerSesion } from "../services/api"
+
+type Recomendacion = {
+  titulo: string
+  autor: string
+  genero: string
+  rating: number
+  year: number
+  visitas: number
+}
 
 function HomePage() {
 
-  console.log("HomePage renderizado")
+  const navigate = useNavigate()
+  const [recomendaciones, setRecomendaciones] = useState<Recomendacion[]>([])
+  const [cargando, setCargando] = useState(true)
+  const [error, setError] = useState("")
 
-  const [recomendaciones, setRecomendaciones] = useState<any[]>([])
+  const { nombre_usuario, id_usuario } = obtenerSesion()
 
   useEffect(() => {
-
-  fetch("http://127.0.0.1:8000/test")
-    .then((response) => response.json())
-    .then((data) => {
-      console.log(data)
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-
-}, [])
-    
-
-const books = [
-  {
-    id: 1,
-    title: "1984",
-    author: "George Orwell",
-    year: "1949",
-    description: "Una distopía sobre vigilancia y control."
-  },
-  {
-    id: 2,
-    title: "Dune",
-    author: "Frank Herbert",
-    year: "1965",
-    description: "Política, religión y guerra en Arrakis."
-  },
-  {
-    id: 3,
-    title: "The Hobbit",
-    author: "J.R.R. Tolkien",
-    year: "1937",
-    description: "La aventura de Bilbo Bolsón."
-  }
-]
+    if (!id_usuario) {
+      setError("No hay sesión activa")
+      setCargando(false)
+      return
+    }
+    obtenerRecomendaciones(id_usuario)
+      .then((data) => setRecomendaciones(data))
+      .catch(() => setError("Error al cargar recomendaciones"))
+      .finally(() => setCargando(false))
+  }, [id_usuario])
 
   return (
+    <MainLayout>
 
-  <MainLayout>
+      <h1 className="text-5xl font-bold mb-2">
+        Recomendaciones
+      </h1>
 
-    <h1 className="text-5xl font-bold mb-10">
-      Biblioteca
-    </h1>
+      {nombre_usuario && (
+        <p className="text-gray-500 mb-10">Hola, {nombre_usuario} 👋</p>
+      )}
 
-    {/* Lecturas en proceso */}
-    <section className="mb-10">
+      {cargando && <p className="text-gray-400">Cargando recomendaciones...</p>}
+      {error    && <p className="text-red-500">{error}</p>}
 
-      <h2 className="text-2xl font-semibold mb-4">
-        Lecturas en proceso
-      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-      <div className="flex gap-6 overflow-x-auto pb-2">
-        {books.map((book, index) => (
-          <BookCard
+        {recomendaciones.map((libro, index) => (
+
+          //  Card clickeable — navega a /books/:titulo
+          <div
             key={index}
-            id={book.id}
-            title={book.title}
-            author={book.author}
-            year={book.year}
-            description={book.description}
-          />
+            onClick={() => navigate(`/books/${encodeURIComponent(libro.titulo)}`)}
+            className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg hover:scale-105 transition cursor-pointer"
+          >
+
+            <h2 className="text-xl font-bold mb-1">{libro.titulo}</h2>
+            <p className="text-gray-600 mb-1">{libro.autor}</p>
+            <p className="text-gray-400 text-sm mb-3">{libro.genero} · {libro.year}</p>
+
+            <div className="flex justify-between items-center">
+              <span className="text-yellow-500 font-semibold">
+                ★ {libro.rating}
+              </span>
+              <span className="text-xs text-gray-400">
+                {libro.visitas} visitas
+              </span>
+            </div>
+
+          </div>
+
         ))}
+
       </div>
 
-    </section>
-
-    {/* Lecturas guardadas */}
-    <section className="mb-10">
-
-      <h2 className="text-2xl font-semibold mb-4">
-        Lecturas guardadas
-      </h2>
-
-      <div className="flex gap-6 overflow-x-auto pb-2">
-        {books.map((book, index) => (
-          <BookCard
-            key={index}
-            id={book.id}
-            title={book.title}
-            author={book.author}
-            year={book.year}
-            description={book.description}
-          />
-        ))}
-      </div>
-
-    </section>
-
-    {/* Lecturas terminadas */}
-    <section>
-
-      <h2 className="text-2xl font-semibold mb-4">
-        Lecturas terminadas
-      </h2>
-
-      <div className="flex gap-6 overflow-x-auto pb-2">
-        {books.map((book, index) => (
-          <BookCard
-            key={index}
-            id={book.id}
-            title={book.title}
-            author={book.author}
-            year={book.year}
-            description={book.description}
-          />
-        ))}
-      </div>
-
-    </section>
-
-  </MainLayout>
-
-)
+    </MainLayout>
+  )
 }
 
 export default HomePage

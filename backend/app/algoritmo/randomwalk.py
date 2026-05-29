@@ -24,7 +24,9 @@ class Randomwalk:
             "id": int(id_usuario)
         }
 
-        libros_leidos = self.obtener_libros_leidos(id_usuario)
+        libros_leidos = self.obtener_libros_leidos(
+            id_usuario
+        )
 
         with db.driver.session(
             database="biblioteca"
@@ -142,7 +144,46 @@ class Randomwalk:
             reverse=True
         )
 
-        return recomendaciones[:10]
+        resultado_final = []
+
+        with db.driver.session(
+            database="biblioteca"
+        ) as session:
+
+            for titulo, cantidad_visitas in recomendaciones[:10]:
+
+                query = """
+                MATCH (b:Libro {
+                    titulo: $titulo
+                })
+
+                RETURN
+                    b.titulo AS titulo,
+                    b.autor AS autor,
+                    b.genero AS genero,
+                    b.rating AS rating,
+                    b.year AS year
+                """
+
+                libro = session.run(
+                    query,
+                    titulo=titulo
+                ).single()
+
+                if libro:
+
+                    resultado_final.append({
+
+                        "titulo": libro["titulo"],
+                        "autor": libro["autor"],
+                        "genero": libro["genero"],
+                        "rating": libro["rating"],
+                        "year": libro["year"],
+                        "visitas": cantidad_visitas
+
+                    })
+
+        return resultado_final
 
     def obtener_libros_leidos(
         self,
