@@ -1,8 +1,75 @@
+from typing import Optional
 from app.modelo.libro import Libro
 from app.configuracion.database import db
 
 
 class ServicioLibros:
+
+    @staticmethod
+    def buscar_libros(
+        search: Optional[str] = None,
+        autor:  Optional[str] = None,
+        genero: Optional[str] = None,
+        limit:  int = 20
+    ):
+        """
+        Busca libros con filtros opcionales.
+        - search: coincidencia parcial en título (case-insensitive)
+        - autor:  filtro exacto por autor
+        - genero: filtro exacto por género
+        - limit:  máximo de resultados
+        """
+
+        # Construimos la query dinámicamente según los filtros recibidos
+        condiciones = []
+
+        if search:
+            condiciones.append(
+                "toLower(b.titulo) CONTAINS toLower($search)"
+            )
+        if autor:
+            condiciones.append("b.autor = $autor")
+        if genero:
+            condiciones.append("b.genero = $genero")
+
+        where_clause = (
+            "WHERE " + " AND ".join(condiciones)
+            if condiciones
+            else ""
+        )
+
+        query = f"""
+        MATCH (b:Libro)
+        {where_clause}
+        RETURN
+            b.titulo AS titulo,
+            b.autor  AS autor,
+            b.genero AS genero,
+            b.rating AS rating,
+            b.year   AS year
+        ORDER BY b.rating DESC
+        LIMIT $limit
+        """
+
+        params = {
+            "search": search or "",
+            "autor":  autor  or "",
+            "genero": genero or "",
+            "limit":  limit
+        }
+
+        with db.driver.session(database="biblioteca") as session:
+            resultado = session.run(query, **params)
+            return [
+                {
+                    "titulo": r["titulo"],
+                    "autor":  r["autor"],
+                    "genero": r["genero"],
+                    "rating": r["rating"],
+                    "year":   r["year"],
+                }
+                for r in resultado
+            ]
 
     @staticmethod
     def obtener_libro(titulo: str):

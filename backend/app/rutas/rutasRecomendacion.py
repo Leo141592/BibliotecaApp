@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
+from typing import Optional
 
 from app.servicios.servicioUsuario import ServicioUsuario
 from app.servicios.servicioRecomendacion import ServicioRecomendacion
@@ -58,6 +59,30 @@ def registrar_usuario(body: RegistroRequest):
 
 
 # ── Rutas libros ────────────────────────────────────────────────────
+
+# IMPORTANTE: /libros/buscar debe ir ANTES de /libro/{titulo}
+# para que FastAPI no interprete "buscar" como un parámetro de título
+
+@router.get("/libros/buscar")
+def buscar_libros(
+    search: Optional[str] = Query(default=None),
+    autor:  Optional[str] = Query(default=None),
+    genero: Optional[str] = Query(default=None),
+    limit:  int           = Query(default=20, ge=1, le=100)
+):
+    """
+    Busca libros con filtros opcionales:
+    - search: coincidencia parcial en título (case-insensitive)
+    - autor:  filtro exacto por autor
+    - genero: filtro exacto por género
+    - limit:  máximo de resultados (default 20)
+    """
+    return ServicioLibros.buscar_libros(
+        search=search,
+        autor=autor,
+        genero=genero,
+        limit=limit
+    )
 
 @router.get("/libro/{titulo}")
 def obtener_libro(titulo: str):

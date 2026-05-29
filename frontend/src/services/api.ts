@@ -58,6 +58,23 @@ export async function obtenerRecomendaciones(idUsuario: string) {
 
 // ── Libros ──────────────────────────────────────────────────────────
 
+export async function buscarLibros(params: {
+  search?: string
+  autor?: string
+  genero?: string
+  limit?: number
+}) {
+  const query = new URLSearchParams()
+  if (params.search) query.set("search", params.search)
+  if (params.autor)  query.set("autor",  params.autor)
+  if (params.genero) query.set("genero", params.genero)
+  if (params.limit)  query.set("limit",  String(params.limit))
+
+  const response = await fetch(`${API_URL}/libros/buscar?${query.toString()}`)
+  if (!response.ok) throw new Error("Error buscando libros")
+  return response.json()
+}
+
 export async function obtenerLibro(titulo: string) {
   const response = await fetch(
     `${API_URL}/libro/${encodeURIComponent(titulo)}`
