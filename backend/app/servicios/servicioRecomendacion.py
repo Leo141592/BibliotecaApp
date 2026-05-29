@@ -1,4 +1,5 @@
-from app.algoritmo.randomwalk import (Randomwalk)
+from app.algoritmo.randomwalk import Randomwalk
+
 
 class ServicioRecomendacion:
 
@@ -7,4 +8,4 @@ class ServicioRecomendacion:
 
         recomendador = Randomwalk()
 
-        return recomendadoR.recomendar(id_usuario)
+        return recomendador.recomendar(id_usuario)

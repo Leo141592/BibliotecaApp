@@ -5,14 +5,16 @@ import MainLayout from "../layouts/MainLayout"
 
 function HomePage() {
 
+  console.log("HomePage renderizado")
+
   const [recomendaciones, setRecomendaciones] = useState<any[]>([])
 
   useEffect(() => {
 
-  obtenerRecomendaciones("1")
+  fetch("http://127.0.0.1:8000/test")
+    .then((response) => response.json())
     .then((data) => {
       console.log(data)
-      setRecomendaciones(data)
     })
     .catch((error) => {
       console.error(error)
