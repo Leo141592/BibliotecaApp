@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom"
 
 type BookCardProps = {
-  id: number
+  id: string | number   // acepta titulo (string) o id numérico
   title: string
   author: string
   year: string
@@ -24,7 +24,6 @@ function BookCard({
 
     <div className="relative">
 
-      {/* Botón favoritos */}
       <button
         onClick={onToggleFavorite}
         className={`
@@ -40,25 +39,14 @@ function BookCard({
         {isFavorite ? "−" : "★"}
       </button>
 
-      <Link to={`/books/${id}`}>
+      <Link to={`/books/${encodeURIComponent(String(id))}`}>
 
         <div className="bg-white rounded-2xl shadow-md p-4 min-w-62.5 hover:scale-105 transition cursor-pointer">
 
-          <h3 className="text-xl font-bold">
-            {title}
-          </h3>
-
-          <p className="text-gray-600">
-            {author}
-          </p>
-
-          <p className="text-gray-500 text-sm mb-2">
-            {year}
-          </p>
-
-          <p className="text-sm text-gray-700">
-            {description}
-          </p>
+          <h3 className="text-xl font-bold">{title}</h3>
+          <p className="text-gray-600">{author}</p>
+          <p className="text-gray-500 text-sm mb-2">{year}</p>
+          <p className="text-sm text-gray-700">{description}</p>
 
         </div>
 

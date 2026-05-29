@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from app.servicios.servicioUsuario import ServicioUsuario
 from app.servicios.servicioRecomendacion import ServicioRecomendacion
 from app.servicios.servicioAmigos import ServicioAmigos
 from app.servicios.servicioLibros import ServicioLibros
@@ -26,7 +27,7 @@ class AmigoRequest(BaseModel):
 
 class LibroLeidoRequest(BaseModel):
     id_usuario: str
-    titulo: str       # usamos titulo porque así está en Neo4j
+    titulo: str
     puntuacion: float
 
 class LibroFavoritoRequest(BaseModel):
@@ -60,7 +61,6 @@ def registrar_usuario(body: RegistroRequest):
 
 @router.get("/libro/{titulo}")
 def obtener_libro(titulo: str):
-    """Devuelve los datos de un libro por título"""
     resultado = ServicioLibros.obtener_libro(titulo)
     if not resultado:
         raise HTTPException(status_code=404, detail="Libro no encontrado")
@@ -68,7 +68,6 @@ def obtener_libro(titulo: str):
 
 @router.post("/libro-leido")
 def marcar_leido(body: LibroLeidoRequest):
-    """Guarda relación LEYO con puntuación en Neo4j"""
     try:
         ServicioLibros.libro_leido_por_titulo(
             body.id_usuario,
@@ -81,7 +80,6 @@ def marcar_leido(body: LibroLeidoRequest):
 
 @router.post("/libro-favorito")
 def marcar_favorito(body: LibroFavoritoRequest):
-    """Guarda relación FAVORITO en Neo4j"""
     ServicioLibros.libro_favorito_por_titulo(
         body.id_usuario,
         body.titulo
@@ -103,3 +101,14 @@ def agregar_amigo(body: AmigoRequest):
         body.id_usuario_1,
         body.id_usuario_2
     )
+
+
+# ── Rutas cuenta ────────────────────────────────────────────────────
+
+@router.get("/usuario/{id_usuario}/estadisticas")
+def obtener_estadisticas(id_usuario: str):
+    return ServicioUsuario.obtener_estadisticas(int(id_usuario))
+
+@router.get("/usuario/{id_usuario}/favoritos")
+def obtener_favoritos(id_usuario: str):
+    return ServicioUsuario.obtener_favoritos(int(id_usuario))

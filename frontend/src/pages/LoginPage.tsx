@@ -1,8 +1,7 @@
 import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { iniciarSesion, guardarSesion } from "../services/api"
 
-// Usuarios del CSV — login temporal por id
 const USUARIOS = [
   { id: 1,  nombre: "Ana",     preferencia: "Fantasy"   },
   { id: 2,  nombre: "Carlos",  preferencia: "Horror"    },
@@ -18,8 +17,6 @@ const USUARIOS = [
 
 function LoginPage() {
 
-  const navigate = useNavigate()
-
   const [idSeleccionado, setIdSeleccionado] = useState<number>(1)
   const [error, setError] = useState("")
   const [cargando, setCargando] = useState(false)
@@ -30,17 +27,14 @@ function LoginPage() {
     setCargando(true)
 
     try {
-      //  Manda solo el id al backend
       const data = await iniciarSesion(idSeleccionado)
-
-      //  Guarda sesión en localStorage
       guardarSesion(data.token, data.id_usuario, data.nombre_usuario)
 
-      navigate("/home")
+      // Reload completo para limpiar todo el estado de React
+      window.location.href = "/home"
 
     } catch {
       setError("Usuario no encontrado")
-    } finally {
       setCargando(false)
     }
   }

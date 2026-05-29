@@ -101,3 +101,17 @@ export async function agregarAmigo(id_usuario_1: string, id_usuario_2: string) {
   if (!response.ok) throw new Error("Error al agregar amigo")
   return response.json()
 }
+
+// ── Cuenta ──────────────────────────────────────────────────────────
+
+export async function obtenerEstadisticas(id_usuario: string) {
+  const response = await fetch(`${API_URL}/usuario/${id_usuario}/estadisticas`)
+  if (!response.ok) throw new Error("Error obteniendo estadísticas")
+  return response.json()
+}
+
+export async function obtenerFavoritos(id_usuario: string) {
+  const response = await fetch(`${API_URL}/usuario/${id_usuario}/favoritos`)
+  if (!response.ok) throw new Error("Error obteniendo favoritos")
+  return response.json()
+}

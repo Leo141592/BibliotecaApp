@@ -19,7 +19,9 @@ function HomePage() {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState("")
 
-  const { nombre_usuario, id_usuario } = obtenerSesion()
+  // Leer sesión una sola vez con useState para evitar el warning de dependencias
+  const [sesion] = useState(() => obtenerSesion())
+  const { nombre_usuario, id_usuario } = sesion
 
   useEffect(() => {
     if (!id_usuario) {
@@ -51,13 +53,11 @@ function HomePage() {
 
         {recomendaciones.map((libro, index) => (
 
-          //  Card clickeable — navega a /books/:titulo
           <div
             key={index}
             onClick={() => navigate(`/books/${encodeURIComponent(libro.titulo)}`)}
             className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg hover:scale-105 transition cursor-pointer"
           >
-
             <h2 className="text-xl font-bold mb-1">{libro.titulo}</h2>
             <p className="text-gray-600 mb-1">{libro.autor}</p>
             <p className="text-gray-400 text-sm mb-3">{libro.genero} · {libro.year}</p>
