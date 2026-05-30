@@ -1,32 +1,49 @@
 import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { registrarUsuario } from "../services/api"
+import { Link } from "react-router-dom"
+import { registrarUsuario, iniciarSesion, guardarSesion } from "../services/api"
 
 function RegisterPage() {
 
-  const navigate = useNavigate()
-
-  const [nombreUsuario, setNombreUsuario] = useState("")
-  const [correo, setCorreo] = useState("")
+  const [nombre,      setNombre]      = useState("")
   const [contrasenia, setContrasenia] = useState("")
-  const [error, setError] = useState("")
-  const [cargando, setCargando] = useState(false)
+  const [confirmar,   setConfirmar]   = useState("")
+  const [error,       setError]       = useState("")
+  const [cargando,    setCargando]    = useState(false)
 
   const handleRegistro = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+
+    if (contrasenia !== confirmar) {
+      setError("Las contraseñas no coinciden")
+      return
+    }
+
+    if (contrasenia.length < 4) {
+      setError("La contraseña debe tener al menos 4 caracteres")
+      return
+    }
+
     setCargando(true)
 
     try {
-      //  Llama al backend real
-      await registrarUsuario(nombreUsuario, correo, contrasenia)
+      // 1. Crear usuario
+      const data = await registrarUsuario(nombre, contrasenia)
 
-      // Redirige al login tras registrarse
-      navigate("/")
+      // 2. Login automático con el nombre y contraseña recién creados
+      const sesion = await iniciarSesion(nombre, contrasenia)
+      guardarSesion(sesion.token, sesion.id_usuario, sesion.nombre_usuario)
 
-    } catch {
-      setError("Error al crear la cuenta. Intenta de nuevo.")
-    } finally {
+      // 3. Redirigir al home
+      window.location.href = "/home"
+
+    } catch (err: any) {
+      // El backend devuelve 409 si el nombre ya existe
+      if (err?.message?.includes("409") || err?.message?.includes("uso")) {
+        setError("Ese nombre de usuario ya está en uso")
+      } else {
+        setError("Error al crear la cuenta. Intenta de nuevo.")
+      }
       setCargando(false)
     }
   }
@@ -42,53 +59,69 @@ function RegisterPage() {
 
         <form className="flex flex-col gap-4" onSubmit={handleRegistro}>
 
-          <input
-            type="text"
-            placeholder="Nombre de usuario"
-            className="border p-3 rounded-lg"
-            value={nombreUsuario}
-            onChange={(e) => setNombreUsuario(e.target.value)}
-            required
-          />
+          <div>
+            <label className="text-sm text-gray-500 mb-1 block">
+              Nombre de usuario
+            </label>
+            <input
+              type="text"
+              placeholder="Tu nombre"
+              className="border p-3 rounded-lg w-full"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              required
+              minLength={2}
+            />
+          </div>
 
-          <input
-            type="email"
-            placeholder="Correo electrónico"
-            className="border p-3 rounded-lg"
-            value={correo}
-            onChange={(e) => setCorreo(e.target.value)}
-            required
-          />
+          <div>
+            <label className="text-sm text-gray-500 mb-1 block">
+              Contraseña
+            </label>
+            <input
+              type="password"
+              placeholder="Mínimo 4 caracteres"
+              className="border p-3 rounded-lg w-full"
+              value={contrasenia}
+              onChange={(e) => setContrasenia(e.target.value)}
+              required
+            />
+          </div>
 
-          <input
-            type="password"
-            placeholder="Contraseña"
-            className="border p-3 rounded-lg"
-            value={contrasenia}
-            onChange={(e) => setContrasenia(e.target.value)}
-            required
-          />
-
-          <button
-            type="submit"
-            disabled={cargando}
-            className="bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
-          >
-            {cargando ? "Creando cuenta..." : "Crear Cuenta"}
-          </button>
+          <div>
+            <label className="text-sm text-gray-500 mb-1 block">
+              Confirmar contraseña
+            </label>
+            <input
+              type="password"
+              placeholder="Repite tu contraseña"
+              className="border p-3 rounded-lg w-full"
+              value={confirmar}
+              onChange={(e) => setConfirmar(e.target.value)}
+              required
+            />
+          </div>
 
           {error && (
-            <div className="bg-red-100 text-red-700 p-3 rounded-lg text-center">
+            <div className="bg-red-100 text-red-700 p-3 rounded-lg text-center text-sm">
               {error}
             </div>
           )}
 
+          <button
+            type="submit"
+            disabled={cargando}
+            className="bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 transition disabled:opacity-50 font-semibold"
+          >
+            {cargando ? "Creando cuenta..." : "Crear Cuenta"}
+          </button>
+
         </form>
 
-        <p className="text-center mt-4">
+        <p className="text-center mt-4 text-sm">
           ¿Ya tienes cuenta?{" "}
           <Link to="/" className="text-blue-600 hover:underline">
-            Volver al login
+            Iniciar sesión
           </Link>
         </p>
 

@@ -15,11 +15,11 @@ router = APIRouter()
 # ── Modelos de request ──────────────────────────────────────────────
 
 class LoginRequest(BaseModel):
-    id_usuario: int
+    nombre:      str
+    contrasenia: str
 
 class RegistroRequest(BaseModel):
-    nombre_usuario: str
-    correo: str
+    nombre:      str
     contrasenia: str
 
 class AmigoRequest(BaseModel):
@@ -28,12 +28,12 @@ class AmigoRequest(BaseModel):
 
 class LibroLeidoRequest(BaseModel):
     id_usuario: str
-    titulo: str
+    titulo:     str
     puntuacion: float
 
 class LibroFavoritoRequest(BaseModel):
     id_usuario: str
-    titulo: str
+    titulo:     str
 
 
 # ── Rutas auth ──────────────────────────────────────────────────────
@@ -44,24 +44,20 @@ def test():
 
 @router.post("/login")
 def iniciar_sesion(body: LoginRequest):
-    resultado = Login.iniciar_sesion(body.id_usuario)
+    resultado = Login.iniciar_sesion(body.nombre, body.contrasenia)
     if not resultado:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        raise HTTPException(status_code=401, detail="Nombre o contraseña incorrectos")
     return resultado
 
 @router.post("/registro")
 def registrar_usuario(body: RegistroRequest):
-    return Registro.registrar_usuario(
-        body.nombre_usuario,
-        body.correo,
-        body.contrasenia
-    )
+    try:
+        return Registro.registrar_usuario(body.nombre, body.contrasenia)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 
 # ── Rutas libros ────────────────────────────────────────────────────
-
-# IMPORTANTE: /libros/buscar debe ir ANTES de /libro/{titulo}
-# para que FastAPI no interprete "buscar" como un parámetro de título
 
 @router.get("/libros/buscar")
 def buscar_libros(
@@ -70,13 +66,6 @@ def buscar_libros(
     genero: Optional[str] = Query(default=None),
     limit:  int           = Query(default=20, ge=1, le=100)
 ):
-    """
-    Busca libros con filtros opcionales:
-    - search: coincidencia parcial en título (case-insensitive)
-    - autor:  filtro exacto por autor
-    - genero: filtro exacto por género
-    - limit:  máximo de resultados (default 20)
-    """
     return ServicioLibros.buscar_libros(
         search=search,
         autor=autor,
@@ -112,13 +101,24 @@ def marcar_favorito(body: LibroFavoritoRequest):
     return {"mensaje": "Libro marcado como favorito"}
 
 
-# ── Rutas recomendaciones y amigos ──────────────────────────────────
+# ── Rutas recomendaciones ───────────────────────────────────────────
 
 @router.get("/usuario/{id_usuario}")
 def recomendar_libros(id_usuario: str):
     if not id_usuario or id_usuario in ("undefined", "null"):
         raise HTTPException(status_code=400, detail="id_usuario inválido")
     return ServicioRecomendacion.obtenerRecomendaciones(id_usuario)
+
+
+# ── Rutas amigos ────────────────────────────────────────────────────
+
+@router.get("/usuarios")
+def obtener_todos_usuarios(id_usuario: int = Query(...)):
+    return ServicioAmigos.obtener_todos_usuarios(id_usuario)
+
+@router.get("/usuario/{id_usuario}/amigos")
+def obtener_amigos(id_usuario: str):
+    return ServicioAmigos.obtener_amigos(int(id_usuario))
 
 @router.post("/agregar-amigo")
 def agregar_amigo(body: AmigoRequest):

@@ -1,58 +1,70 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import MainLayout from "../layouts/MainLayout"
-import { agregarAmigo, obtenerSesion } from "../services/api"
+import { obtenerTodosUsuarios, agregarAmigo, obtenerSesion } from "../services/api"
 
 type Usuario = {
-  id: string
-  username: string
-  favoriteGenre: string
+  id: number
+  nombre: string
+  preferencia: string
+  ya_es_amigo: boolean
 }
 
 function SearchFriendsPage() {
 
-  const [search, setSearch] = useState("")
-  const [agregados, setAgregados] = useState<string[]>([])
-  const [errores, setErrores] = useState<Record<string, string>>({})
-
-  //  Id del usuario logueado desde localStorage
   const { id_usuario } = obtenerSesion()
 
-  // Estos usuarios vendrían del backend en una integración completa;
-  // por ahora se mantiene la lista local pero el botón sí llama a la API
-  const users: Usuario[] = [
-    { id: "1", username: "Ana", favoriteGenre: "Fantasy" },
-    { id: "2", username: "Carlos", favoriteGenre: "Horror" },
-    { id: "3", username: "Maria", favoriteGenre: "Romance" },
-    { id: "4", username: "Luis", favoriteGenre: "Sci-Fi" },
-    { id: "5", username: "Sofia", favoriteGenre: "Mystery" },
-  ]
+  const [usuarios,  setUsuarios]  = useState<Usuario[]>([])
+  const [cargando,  setCargando]  = useState(true)
+  const [error,     setError]     = useState("")
+  const [search,    setSearch]    = useState("")
 
-  const filteredUsers = users.filter((user) =>
-    user.username.toLowerCase().includes(search.toLowerCase())
-  )
+  // Ids en proceso de agregar (para deshabilitar el botón mientras espera)
+  const [agregando, setAgregando] = useState<number[]>([])
+  const [errores,   setErrores]   = useState<Record<number, string>>({})
 
-  const handleAgregar = async (id_amigo: string) => {
+  useEffect(() => {
+    if (!id_usuario) {
+      setError("No hay sesión activa")
+      setCargando(false)
+      return
+    }
+
+    obtenerTodosUsuarios(id_usuario)
+      .then(setUsuarios)
+      .catch(() => setError("Error al cargar usuarios"))
+      .finally(() => setCargando(false))
+  }, [id_usuario])
+
+  const handleAgregar = async (usuario: Usuario) => {
     if (!id_usuario) return
 
+    setAgregando((prev) => [...prev, usuario.id])
+    setErrores((prev) => { const e = { ...prev }; delete e[usuario.id]; return e })
+
     try {
-      //  Llama al backend real
-      await agregarAmigo(id_usuario, id_amigo)
-      setAgregados((prev) => [...prev, id_amigo])
+      await agregarAmigo(id_usuario, String(usuario.id))
+
+      // Marcar como amigo en el estado local para feedback inmediato
+      setUsuarios((prev) =>
+        prev.map((u) =>
+          u.id === usuario.id ? { ...u, ya_es_amigo: true } : u
+        )
+      )
     } catch {
-      setErrores((prev) => ({
-        ...prev,
-        [id_amigo]: "Error al agregar"
-      }))
+      setErrores((prev) => ({ ...prev, [usuario.id]: "Error al agregar" }))
+    } finally {
+      setAgregando((prev) => prev.filter((id) => id !== usuario.id))
     }
   }
 
-  return (
+  const usuariosFiltrados = usuarios.filter((u) =>
+    u.nombre.toLowerCase().includes(search.toLowerCase())
+  )
 
+  return (
     <MainLayout>
 
-      <h1 className="text-5xl font-bold mb-10">
-        Buscar Amigos
-      </h1>
+      <h1 className="text-5xl font-bold mb-10">Buscar Amigos</h1>
 
       <div className="mb-10">
         <input
@@ -64,51 +76,49 @@ function SearchFriendsPage() {
         />
       </div>
 
+      {cargando && <p className="text-gray-400">Cargando usuarios...</p>}
+      {error    && <p className="text-red-500">{error}</p>}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-        {filteredUsers.map((user) => (
-
+        {usuariosFiltrados.map((usuario) => (
           <div
-            key={user.id}
+            key={usuario.id}
             className="bg-white rounded-2xl shadow-md p-8 flex justify-between items-center"
           >
-
             <div>
-              <h2 className="text-2xl font-bold mb-2">
-                {user.username}
-              </h2>
-              <p className="text-gray-600">
-                Género favorito: {user.favoriteGenre}
+              <h2 className="text-2xl font-bold mb-1">{usuario.nombre}</h2>
+              <p className="text-gray-500">
+                Género favorito:{" "}
+                <span className="font-semibold">{usuario.preferencia}</span>
               </p>
-              {errores[user.id] && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errores[user.id]}
-                </p>
+              {errores[usuario.id] && (
+                <p className="text-red-500 text-sm mt-1">{errores[usuario.id]}</p>
               )}
             </div>
 
-            {/*  Botón conectado a la API */}
             <button
-              onClick={() => handleAgregar(user.id)}
-              disabled={agregados.includes(user.id)}
+              onClick={() => handleAgregar(usuario)}
+              disabled={usuario.ya_es_amigo || agregando.includes(usuario.id)}
               className={`
-                px-5 py-3 rounded-xl text-white transition
-                ${agregados.includes(user.id)
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"}
+                px-5 py-3 rounded-xl text-white transition font-semibold
+                ${usuario.ya_es_amigo
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : agregando.includes(usuario.id)
+                    ? "bg-blue-400 cursor-wait"
+                    : "bg-blue-600 hover:bg-blue-700"}
               `}
             >
-              {agregados.includes(user.id) ? "Agregado ✓" : "Agregar"}
+              {usuario.ya_es_amigo
+                ? "Amigos ✓"
+                : agregando.includes(usuario.id)
+                  ? "Agregando..."
+                  : "Agregar"}
             </button>
-
           </div>
-
         ))}
-
       </div>
 
     </MainLayout>
-
   )
 }
 

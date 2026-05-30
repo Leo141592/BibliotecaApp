@@ -1,41 +1,50 @@
-from app.modelo.usuario import Usuario         #  FIX: era app.modelos.usuario
-from app.configuracion.database import db      #  FIX: era app.config.database
-from app.utilidades.seguridad import encriptar_contrasenia
+from app.configuracion.database import db
 
 
 class Registro:
 
     @staticmethod
-    def registrar_usuario(nombre_usuario, correo, contrasenia):
+    def registrar_usuario(nombre: str, contrasenia: str):
 
-        encriptado = encriptar_contrasenia(contrasenia)
-
-        nuevo_usuario = Usuario(
-            nombre_usuario=nombre_usuario,
-            correo=correo,
-            contrasenia=encriptado
-        )
-
-        query = """
-        CREATE (u:Usuario {
-            id_usuario: $id_usuario,
-            nombre_usuario: $nombre_usuario,
-            correo: $correo,
-            contrasenia: $contrasenia
-        })
-        RETURN u
-        """
-
+        # ── 1. Calcular el próximo id ────────────────────────────────
+        # Contamos los usuarios existentes y sumamos 1.
+        # Neo4j no tiene auto-increment nativo, así que lo hacemos
+        # con una query de agregación dentro de la misma sesión.
         with db.driver.session(database="biblioteca") as session:
+
+            resultado_id = session.run(
+                "MATCH (u:Usuario) RETURN count(u) AS total"
+            ).single()
+
+            nuevo_id = (resultado_id["total"] or 0) + 1
+
+            # ── 2. Verificar que el nombre no exista ya ───────────────
+            existe = session.run(
+                "MATCH (u:Usuario {nombre: $nombre}) RETURN u LIMIT 1",
+                nombre=nombre
+            ).single()
+
+            if existe:
+                raise ValueError("El nombre de usuario ya está en uso")
+
+            # ── 3. Crear el nodo con el mismo esquema de la DB ────────
             session.run(
-                query,
-                id_usuario=nuevo_usuario.id_usuario,
-                nombre_usuario=nuevo_usuario.nombre_usuario,
-                correo=nuevo_usuario.correo,
-                contrasenia=nuevo_usuario.contrasenia,
+                """
+                CREATE (:Usuario {
+                    id:          $id,
+                    nombre:      $nombre,
+                    contrasenia: $contrasenia,
+                    edad:        0,
+                    preferencia: ""
+                })
+                """,
+                id=nuevo_id,
+                nombre=nombre,
+                contrasenia=contrasenia
             )
 
         return {
-            "mensaje": "Usuario creado",
-            "id_usuario": nuevo_usuario.id_usuario
+            "mensaje":    "Usuario creado",
+            "id_usuario": nuevo_id,
+            "nombre":     nombre
         }

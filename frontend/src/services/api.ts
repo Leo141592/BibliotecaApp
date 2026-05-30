@@ -2,27 +2,24 @@ const API_URL = "http://127.0.0.1:8000"
 
 // ── Auth ────────────────────────────────────────────────────────────
 
-export async function iniciarSesion(id_usuario: number) {
+export async function iniciarSesion(nombre: string, contrasenia: string) {
   const response = await fetch(`${API_URL}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id_usuario })
+    body: JSON.stringify({ nombre, contrasenia })
   })
-  if (!response.ok) throw new Error("Usuario no encontrado")
+  if (!response.ok) throw new Error(`${response.status}`)
   return response.json()
 }
 
-export async function registrarUsuario(
-  nombre_usuario: string,
-  correo: string,
-  contrasenia: string
-) {
+export async function registrarUsuario(nombre: string, contrasenia: string) {
   const response = await fetch(`${API_URL}/registro`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nombre_usuario, correo, contrasenia })
+    body: JSON.stringify({ nombre, contrasenia })
   })
-  if (!response.ok) throw new Error("Error al crear la cuenta")
+  // Propagar el status para distinguir 409 (nombre en uso) en el frontend
+  if (!response.ok) throw new Error(`${response.status}`)
   return response.json()
 }
 
@@ -108,6 +105,18 @@ export async function marcarFavorito(id_usuario: string, titulo: string) {
 }
 
 // ── Amigos ──────────────────────────────────────────────────────────
+
+export async function obtenerAmigos(id_usuario: string) {
+  const response = await fetch(`${API_URL}/usuario/${id_usuario}/amigos`)
+  if (!response.ok) throw new Error("Error obteniendo amigos")
+  return response.json()
+}
+
+export async function obtenerTodosUsuarios(id_usuario: string) {
+  const response = await fetch(`${API_URL}/usuarios?id_usuario=${id_usuario}`)
+  if (!response.ok) throw new Error("Error obteniendo usuarios")
+  return response.json()
+}
 
 export async function agregarAmigo(id_usuario_1: string, id_usuario_2: string) {
   const response = await fetch(`${API_URL}/agregar-amigo`, {
