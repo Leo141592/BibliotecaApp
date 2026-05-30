@@ -16,7 +16,7 @@ class ServicioAmigos:
         RETURN r
         """
 
-        with db.driver.session(database="biblioteca") as session:
+        with db.driver.session(database="59125830") as session:
             session.run(
                 query,
                 id_usuario_1=int(id_usuario_1),
@@ -45,7 +45,7 @@ class ServicioAmigos:
             collect(b.genero) AS generos
         """
 
-        with db.driver.session(database="biblioteca") as session:
+        with db.driver.session(database="59125830") as session:
             resultado = session.run(query, id_usuario=id_usuario)
 
             amigos = []
@@ -96,7 +96,7 @@ class ServicioAmigos:
         ORDER BY u.nombre
         """
 
-        with db.driver.session(database="biblioteca") as session:
+        with db.driver.session(database="59125830") as session:
             resultado = session.run(query, id_usuario=id_usuario)
 
             return [

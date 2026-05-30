@@ -2,9 +2,9 @@ from neo4j import GraphDatabase
 import pandas as pd
 
 # conexión Neo4j
-uri = "neo4j://127.0.0.1:7687"
-user = "neo4j"
-password = "DataBase31415"
+uri = "neo4j+s://59125830.databases.neo4j.io"
+user = "59125830"
+password = "1B_UkrRVc4GIxOhv_VN5XbpG43GnJiIbxv2xwBEzdcE"
 
 driver = GraphDatabase.driver(uri, auth=(user, password))
 
@@ -13,7 +13,7 @@ books = pd.read_csv("books_database.csv")
 users = pd.read_csv("users_database.csv")
 interactions = pd.read_csv("interactions_database.csv")
 
-with driver.session(database="biblioteca") as session:
+with driver.session(database="59125830") as session:
 
     # limpiar base
     session.run("MATCH (n) DETACH DELETE n")

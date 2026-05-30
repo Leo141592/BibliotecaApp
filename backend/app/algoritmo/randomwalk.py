@@ -29,7 +29,7 @@ class Randomwalk:
         )
 
         with db.driver.session(
-            database="biblioteca"
+            database="59125830"
         ) as session:
 
             for _ in range(self.pasos):
@@ -147,7 +147,7 @@ class Randomwalk:
         resultado_final = []
 
         with db.driver.session(
-            database="biblioteca"
+            database="59125830"
         ) as session:
 
             for titulo, cantidad_visitas in recomendaciones[:10]:
@@ -201,7 +201,7 @@ class Randomwalk:
         libros = []
 
         with db.driver.session(
-            database="biblioteca"
+            database="59125830"
         ) as session:
 
             resultado = session.run(

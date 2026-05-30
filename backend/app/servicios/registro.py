@@ -10,7 +10,7 @@ class Registro:
         # Contamos los usuarios existentes y sumamos 1.
         # Neo4j no tiene auto-increment nativo, así que lo hacemos
         # con una query de agregación dentro de la misma sesión.
-        with db.driver.session(database="biblioteca") as session:
+        with db.driver.session(database="59125830") as session:
 
             resultado_id = session.run(
                 "MATCH (u:Usuario) RETURN count(u) AS total"
